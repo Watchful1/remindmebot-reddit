@@ -164,10 +164,6 @@ class Reply(object):
             print("HTTPError", err)
             time.sleep(10)
             return False
-        except praw.errors.HTTPException as err:
-            print("praw.errors.HTTPException")
-            time.sleep(10)
-            return False
 
 
 def _force_utf8(text):
