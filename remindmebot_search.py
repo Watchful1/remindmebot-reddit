@@ -86,7 +86,7 @@ class Search(object):
         self.reply()
         if self._privateMessage == True:
             # Makes sure to marks as read, even if the above doesn't work
-            self.comment.mark_as_read()
+            self.comment.mark_read()
             self.find_bot_child_comment()
         self._addToDB.connection.close()
 
@@ -195,7 +195,7 @@ class Search(object):
 
         author = self.comment.author
         def send_message():
-            reddit.redditor(author).message('Hello, ' + str(author) + ' RemindMeBot Confirmation Sent', self._replyMessage)
+            author.message('Hello, ' + author.name + ' RemindMeBot Confirmation Sent', self._replyMessage)
 
         try:
             if self._privateMessage == False:
@@ -347,7 +347,7 @@ def read_pm():
                 "!remindme" in message.body.lower()) and prawobject):
                 redditPM = Search(message)
                 redditPM.run(privateMessage=True)
-                message.mark_as_read()
+                message.mark_read()
             elif (("delete!" in message.body.lower() or "!delete" in message.body.lower()) and prawobject):  
                 givenid = re.findall(r'delete!\s(.*?)$', message.body.lower())[0]
                 comment = reddit.comment(givenid)
