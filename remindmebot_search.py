@@ -150,8 +150,8 @@ class Search(object):
                         self.comment.permalink.encode('utf-8'),
                         self._messageInput.encode('utf-8'),
                         self._replyDate,
-                        self._originDate,
-                        self.comment.author))
+                        self._originDate.strftime('%Y-%m-%d %H:%M:%S'),
+                        self.comment.author.name))
         self._addToDB.connection.commit()
         # Info is added to DB, user won't be bothered a second time
         self.commented.append(self.comment.id)

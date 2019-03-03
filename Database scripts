@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS message_date (
     new_date datetime DEFAULT NULL,
     origin_date datetime DEFAULT NULL,
     userID varchar(50) DEFAULT NULL,
-    constraint check_dates check (origin_date > new_date)
+    constraint check_dates check (origin_date < new_date)
 )
