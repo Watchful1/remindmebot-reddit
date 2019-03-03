@@ -6,7 +6,7 @@
 
 import praw
 import re
-import MySQLdb
+import sqlite3
 import configparser
 import time
 from datetime import datetime, timedelta
@@ -41,9 +41,7 @@ class Connect(object):
     cursor = None
 
     def __init__(self):
-        self.connection = MySQLdb.connect(
-            host="localhost", user=DB_USER, passwd=DB_PASS, db="bot"
-        )
+        self.connection = sqlite3.connect("database.db")
         self.cursor = self.connection.cursor()
 
 class Reply(object):
