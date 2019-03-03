@@ -9,7 +9,6 @@ import re
 import sqlite3
 import ast
 import time
-import urllib
 import requests
 import parsedatetime.parsedatetime as pdt
 from datetime import datetime
@@ -51,7 +50,8 @@ class Search(object):
     cmd = "SELECT list FROM comment_list WHERE id = 1"
     database.cursor.execute(cmd)
     data = database.cursor.fetchall()
-    subId = ast.literal_eval("[" + data[0][0] + "]")
+    if len(data):
+        subId = ast.literal_eval("[" + data[0][0] + "]")
     database.connection.commit()
     database.connection.close()
 
@@ -100,9 +100,8 @@ class Search(object):
             if permalinkTemp:
                 self.comment.permalink = permalinkTemp.group()[1:-1]
                 # Makes sure the URL is real
-                try:
-                    urllib.urlopen(self.comment.permalink)
-                except IOError:
+                request = requests.get(self.comment.permalink)
+                if request.status_code != 200:
                     self.comment.permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
             else:
                 # Defaults when the user doesn't provide a link
@@ -340,9 +339,9 @@ def remove_all(username):
 
 def read_pm():
     try:
-        for message in reddit.inbox.unread(limit = 100):
+        for message in reddit.inbox.unread(limit=100):
             # checks to see as some comments might be replys and non PMs
-            prawobject = isinstance(message, praw.objects.Message)
+            prawobject = isinstance(message, praw.models.Message)
             if (("remindme" in message.body.lower() or 
                 "remindme!" in message.body.lower() or 
                 "!remindme" in message.body.lower()) and prawobject):
@@ -366,7 +365,7 @@ def read_pm():
             elif (("myreminders!" in message.body.lower() or "!myreminders" in message.body.lower()) and prawobject):
                 listOfReminders = grab_list_of_reminders(message.author.name)
                 message.reply(listOfReminders)
-                message.mark_as_read()
+                message.mark_read()
             elif (("remove!" in message.body.lower() or "!remove" in message.body.lower()) and prawobject):
                 givenid = re.findall(r'remove!\s(.*?)$', message.body.lower())[0]
                 deletedFlag = remove_reminder(message.author.name, givenid)
@@ -421,11 +420,11 @@ def main():
             json = request.json()
             comments =  json["data"]
             read_pm()
-            for rawcomment in comments:
-                # object constructor requires empty attribute
-                rawcomment['_replies'] = ''
-                comment = praw.objects.Comment(reddit, rawcomment)
-                check_comment(comment)
+            # for rawcomment in comments:
+            #     # object constructor requires empty attribute
+            #     rawcomment['_replies'] = ''
+            #     comment = reddit.comment(rawcomment)
+            #     check_comment(comment)
 
             # Only check periodically 
             if checkcycle >= 5:
