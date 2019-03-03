@@ -87,8 +87,8 @@ class Reply(object):
         # get current time to compare
         currentTime = datetime.now(timezone('UTC'))
         currentTime = format(currentTime, '%Y-%m-%d %H:%M:%S')
-        cmd = "SELECT * FROM message_date WHERE new_date < %s"
-        self._queryDB.cursor.execute(cmd, [currentTime])
+        cmd = "SELECT * FROM message_date WHERE new_date < ?"
+        self._queryDB.cursor.execute(cmd, (currentTime,))
 
     def search_db(self):
         """
@@ -106,8 +106,8 @@ class Reply(object):
                 flagDelete = self.new_reply(row[1],row[2], row[4], row[5])
                 # removes row based on flagDelete
                 if flagDelete:
-                    cmd = "DELETE FROM message_date WHERE id = %s" 
-                    self._queryDB.cursor.execute(cmd, [row[0]])
+                    cmd = "DELETE FROM message_date WHERE id = ?"
+                    self._queryDB.cursor.execute(cmd, (row[0],))
                     self._queryDB.connection.commit()
                     alreadyCommented.append(row[0])
 

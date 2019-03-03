@@ -146,7 +146,7 @@ class Search(object):
         # Converting time
         #9999/12/31 HH/MM/SS
         self._replyDate = time.strftime('%Y-%m-%d %H:%M:%S', holdTime[0])
-        cmd = "INSERT INTO message_date (permalink, message, new_date, origin_date, userID) VALUES (%s, %s, %s, %s, %s)"
+        cmd = "INSERT INTO message_date (permalink, message, new_date, origin_date, userID) VALUES (?, ?, ?, ?, ?)"
         self._addToDB.cursor.execute(cmd, (
                         self.comment.permalink.encode('utf-8'),
                         self._messageInput.encode('utf-8'),
@@ -250,8 +250,8 @@ class Search(object):
         """
         Posts edits the count if found
         """
-        query = "SELECT count(DISTINCT userid) FROM message_date WHERE permalink = %s"
-        self._addToDB.cursor.execute(query, [self.comment.permalink])
+        query = "SELECT count(DISTINCT userid) FROM message_date WHERE permalink = ?"
+        self._addToDB.cursor.execute(query, (self.comment.permalink,))
         data = self._addToDB.cursor.fetchall()
         # Grabs the tuple within the tuple, a number/the dbcount
         dbcount = count = str(data[0][0])
@@ -280,8 +280,8 @@ def grab_list_of_reminders(username):
     Grabs all the reminders of the user
     """
     database = Connect()
-    query = "SELECT permalink, message, new_date, id FROM message_date WHERE userid = %s ORDER BY new_date"
-    database.cursor.execute(query, [username])
+    query = "SELECT permalink, message, new_date, id FROM message_date WHERE userid = ? ORDER BY new_date"
+    database.cursor.execute(query, (username,))
     data = database.cursor.fetchall()
     table = (
             "[**Click here to delete all your reminders at once quickly.**]"
@@ -308,16 +308,16 @@ def remove_reminder(username, idnum):
     """
     database = Connect()
     # only want userid to confirm if owner
-    query = "SELECT userid FROM message_date WHERE id = %s"
-    database.cursor.execute(query, [idnum])
+    query = "SELECT userid FROM message_date WHERE id = ?"
+    database.cursor.execute(query, (idnum,))
     data = database.cursor.fetchall()
     deleteFlag = False
     for row in data:
         userid = str(row[0])
         # If the wrong ID number is given, item isn't deleted
         if userid == username:
-            cmd = "DELETE FROM message_date WHERE id = %s"
-            database.cursor.execute(cmd, [idnum])
+            cmd = "DELETE FROM message_date WHERE id = ?"
+            database.cursor.execute(cmd, (idnum,))
             deleteFlag = True
 
     
@@ -329,11 +329,11 @@ def remove_all(username):
     Deletes all reminders at once
     """
     database = Connect()
-    query = "SELECT * FROM message_date where userid = %s"
-    database.cursor.execute(query, [username])
+    query = "SELECT * FROM message_date where userid = ?"
+    database.cursor.execute(query, (username,))
     count = len(database.cursor.fetchall())
-    cmd = "DELETE FROM message_date WHERE userid = %s"
-    database.cursor.execute(cmd, [username])
+    cmd = "DELETE FROM message_date WHERE userid = ?"
+    database.cursor.execute(cmd, (username,))
     database.connection.commit()
 
     return count
