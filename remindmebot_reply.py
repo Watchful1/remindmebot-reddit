@@ -18,7 +18,7 @@ from pytz import timezone
 # =============================================================================
 
 #Reddit info
-reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
+reddit = praw.Reddit("Watchful1BotTest", user_agent="RemindMeBot user agent")
 
 # =============================================================================
 # CLASSES

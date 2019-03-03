@@ -23,7 +23,7 @@ from threading import Thread
 # =============================================================================
 
 #Reddit info
-reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
+reddit = praw.Reddit("Watchful1BotTest", user_agent="RemindMeBot user agent")
 
 # Time when program was started
 START_TIME = time.time()
