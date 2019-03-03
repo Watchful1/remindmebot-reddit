@@ -13,10 +13,9 @@ import time
 import urllib
 import requests
 import parsedatetime.parsedatetime as pdt
-from datetime import datetime, timedelta
-from requests.exceptions import HTTPError, ConnectionError, Timeout
-from praw.errors import ExceptionList, APIException, InvalidCaptcha, InvalidUser, RateLimitExceeded, Forbidden
-from socket import timeout
+from datetime import datetime
+from praw.exceptions import APIException
+from prawcore.exceptions import Forbidden
 from pytz import timezone
 from threading import Thread
 
@@ -231,11 +230,6 @@ class Search(object):
             else:
                 print(str(author))
                 send_message()
-        except RateLimitExceeded as err:
-            print(err)
-            # PM when I message too much
-            send_message()
-            time.sleep(10)
         except Forbidden as err:
             send_message()
         except APIException as err: # Catch any less specific API errors

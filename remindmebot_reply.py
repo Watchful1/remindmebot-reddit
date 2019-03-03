@@ -5,13 +5,12 @@
 # =============================================================================
 
 import praw
-import re
 import sqlite3
 import configparser
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from requests.exceptions import HTTPError, ConnectionError, Timeout
-from praw.errors import ExceptionList, APIException, InvalidCaptcha, InvalidUser, RateLimitExceeded
+from praw.exceptions import APIException
 from socket import timeout
 from pytz import timezone
 
@@ -154,9 +153,6 @@ class Reply(object):
                     origin_date_text = origin_date_text
                 ))
             print("Did It")
-            return True    
-        except InvalidUser as err:
-            print("InvalidUser", err)
             return True
         except APIException as err:
             print("APIException", err)
@@ -166,10 +162,6 @@ class Reply(object):
             return False
         except (HTTPError, ConnectionError, Timeout, timeout) as err:
             print("HTTPError", err)
-            time.sleep(10)
-            return False
-        except RateLimitExceeded as err:
-            print("RateLimitExceeded", err)
             time.sleep(10)
             return False
         except praw.errors.HTTPException as err:
