@@ -7,7 +7,6 @@ import traceback
 import praw
 import re
 import sqlite3
-import configparser
 import ast
 import time
 import urllib
@@ -23,15 +22,8 @@ from threading import Thread
 # GLOBALS
 # =============================================================================
 
-# Reads the config file
-config = configparser.ConfigParser()
-config.read("remindmebot.cfg")
-
 #Reddit info
 reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
-
-DB_USER = config.get("SQL", "user")
-DB_PASS = config.get("SQL", "passwd")
 
 # Time when program was started
 START_TIME = time.time()

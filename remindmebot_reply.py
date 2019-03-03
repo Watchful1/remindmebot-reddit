@@ -6,7 +6,6 @@
 
 import praw
 import sqlite3
-import configparser
 import time
 from datetime import datetime
 from requests.exceptions import HTTPError, ConnectionError, Timeout
@@ -18,15 +17,8 @@ from pytz import timezone
 # GLOBALS
 # =============================================================================
 
-# Reads the config file
-config = configparser.ConfigParser()
-config.read("remindmebot.cfg")
-
 #Reddit info
 reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
-# DB Info
-DB_USER = config.get("SQL", "user")
-DB_PASS = config.get("SQL", "passwd")
 
 # =============================================================================
 # CLASSES
