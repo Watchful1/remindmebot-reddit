@@ -1,14 +1,13 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # =============================================================================
 # IMPORTS
 # =============================================================================
 import traceback
 import praw
-import OAuth2Util
 import re
 import MySQLdb
-import ConfigParser
+import configparser
 import ast
 import time
 import urllib
@@ -26,13 +25,11 @@ from threading import Thread
 # =============================================================================
 
 # Reads the config file
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.read("remindmebot.cfg")
 
 #Reddit info
-reddit = praw.Reddit(user_agent= "RemindMes")
-o = OAuth2Util.OAuth2Util(reddit, print_log = True)
-o.refresh(force=True)
+reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
 
 DB_USER = config.get("SQL", "user")
 DB_PASS = config.get("SQL", "passwd")
@@ -182,9 +179,9 @@ class Search(object):
             "{remindMeMessage}")
 
         try:
-            self.sub = reddit.get_submission(self.comment.permalink)
+            self.sub = reddit.submission(self.comment.permalink)
         except Exception as err:
-            print "link had http"
+            print("link had http")
         if self._privateMessage == False and self.sub.id not in self.subId:
             remindMeMessage = (
                 "\n\n[**CLICK THIS LINK**](http://np.reddit.com/message/compose/?to=RemindMeBot&subject=Reminder&message="
@@ -210,7 +207,7 @@ class Search(object):
 
         author = self.comment.author
         def send_message():
-            reddit.send_message(author, 'Hello, ' + str(author) + ' RemindMeBot Confirmation Sent', self._replyMessage)
+            reddit.redditor(author).message('Hello, ' + str(author) + ' RemindMeBot Confirmation Sent', self._replyMessage)
 
         try:
             if self._privateMessage == False:
@@ -227,26 +224,26 @@ class Search(object):
                     database.connection.commit()
                     database.connection.close()
                     # grabbing comment just made
-                    reddit.get_info( 
-                            thing_id='t1_'+str(newcomment.id)
+                    reddit.comment(
+                            str(newcomment.id)
                             # edit comment with self ID so it can be deleted
                         ).edit(self._replyMessage.replace('____id____', str(newcomment.id))) 
                 else:
                     send_message()
             else:
-                print str(author)
+                print(str(author))
                 send_message()
         except RateLimitExceeded as err:
-            print err
+            print(err)
             # PM when I message too much
             send_message()
             time.sleep(10)
         except Forbidden as err:
             send_message()
         except APIException as err: # Catch any less specific API errors
-            print err
+            print(err)
         #else:
-            #print self._replyMessage
+            #print(self._replyMessage
 
     def find_bot_child_comment(self):
         """
@@ -254,7 +251,7 @@ class Search(object):
         """
         try:
             # Grabbing all child comments
-            replies = reddit.get_submission(url=self.comment.permalink).comments[0].replies
+            replies = reddit.submission(url=self.comment.permalink).comments[0].replies
             # Look for bot's reply
             commentfound = ""
             if replies:
@@ -274,7 +271,7 @@ class Search(object):
         data = self._addToDB.cursor.fetchall()
         # Grabs the tuple within the tuple, a number/the dbcount
         dbcount = count = str(data[0][0])
-        comment = reddit.get_info(thing_id='t1_'+str(commentfound.id))
+        comment = reddit.comment(str(commentfound.id))
         body = comment.body
 
         pattern = r'(\d+ OTHERS |)CLICK(ED|) THIS LINK'
@@ -359,7 +356,7 @@ def remove_all(username):
 
 def read_pm():
     try:
-        for message in reddit.get_unread(unset_has_mail=True, update_user=True, limit = 100):
+        for message in reddit.inbox.unread(limit = 100):
             # checks to see as some comments might be replys and non PMs
             prawobject = isinstance(message, praw.objects.Message)
             if (("remindme" in message.body.lower() or 
@@ -370,10 +367,9 @@ def read_pm():
                 message.mark_as_read()
             elif (("delete!" in message.body.lower() or "!delete" in message.body.lower()) and prawobject):  
                 givenid = re.findall(r'delete!\s(.*?)$', message.body.lower())[0]
-                givenid = 't1_'+givenid
-                comment = reddit.get_info(thing_id=givenid)
+                comment = reddit.comment(givenid)
                 try:
-                    parentcomment = reddit.get_info(thing_id=comment.parent_id)
+                    parentcomment = comment.parent()
                     if message.author.name == parentcomment.author.name:
                         comment.delete()
                 except ValueError as err:
@@ -403,7 +399,7 @@ def read_pm():
                 message.reply("I have deleted all **" + count + "** reminders for you.\n\n" + listOfReminders)
                 message.mark_as_read()
     except Exception as err:
-        print traceback.format_exc()
+        print(traceback.format_exc())
 
 def check_comment(comment):
     """
@@ -415,23 +411,23 @@ def check_comment(comment):
         redditCall.comment.id not in redditCall.commented and
         'RemindMeBot' != str(comment.author) and
         START_TIME < redditCall.comment.created_utc):
-            print "in"
+            print("in")
             t = Thread(target=redditCall.run())
             t.start()
 
 def check_own_comments():
-    user = reddit.get_redditor("RemindMeBot")
+    user = reddit.redditor("RemindMeBot")
     for comment in user.get_comments(limit=None):
         if comment.score <= -5:
-            print "COMMENT DELETED"
-            print comment
+            print("COMMENT DELETED")
+            print(comment)
             comment.delete()
 # =============================================================================
 # MAIN
 # =============================================================================
 
 def main():
-    print "start"
+    print("start")
     checkcycle = 0
     while True:
         try:
@@ -454,10 +450,10 @@ def main():
             else:
                 checkcycle += 1
 
-            print "----"
+            print("----")
             time.sleep(30)
         except Exception as err:
-            print traceback.format_exc()           
+            print(traceback.format_exc())
             time.sleep(30)
         """
         Will add later if problem with api.pushshift
@@ -466,7 +462,7 @@ def main():
             for comment in praw.helpers.comment_stream(reddit, 'all', limit = 1, verbosity = 0):
                 check_comment(comment)
         except Exception as err:
-           print err
+           print(err
         """
 # =============================================================================
 # RUNNER

@@ -1,14 +1,13 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # =============================================================================
 # IMPORTS
 # =============================================================================
 
 import praw
-import OAuth2Util
 import re
 import MySQLdb
-import ConfigParser
+import configparser
 import time
 from datetime import datetime, timedelta
 from requests.exceptions import HTTPError, ConnectionError, Timeout
@@ -21,13 +20,11 @@ from pytz import timezone
 # =============================================================================
 
 # Reads the config file
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.read("remindmebot.cfg")
 
 #Reddit info
-reddit = praw.Reddit("RemindMeB0tReply")
-o = OAuth2Util.OAuth2Util(reddit, print_log=True)
-o.refresh(force=True)
+reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
 # DB Info
 DB_USER = config.get("SQL", "user")
 DB_PASS = config.get("SQL", "passwd")
@@ -80,17 +77,17 @@ class Reply(object):
         return the original submission
         """
         try:
-            commentObj = reddit.get_submission(_force_utf8(dbPermalink)).comments[0]
+            commentObj = reddit.submission(_force_utf8(dbPermalink)).comments[0]
             if commentObj.is_root:
                 return _force_utf8(commentObj.submission.permalink)
             else:
-                return _force_utf8(reddit.get_info(thing_id=commentObj.parent_id).permalink)
+                return _force_utf8(reddit.comment(commentObj.parent_id).permalink)
         except IndexError as err:
-            print "parrent_comment error"
+            print("parrent_comment error")
             return "It seems your original comment was deleted, unable to return parent comment."
         # Catch any URLs that are not reddit comments
         except Exception  as err:
-            print "HTTPError/PRAW parent comment"
+            print("HTTPError/PRAW parent comment")
             return "Parent comment not required for this URL."
 
     def time_to_reply(self):
@@ -133,14 +130,14 @@ class Reply(object):
         Replies a second time to the user after a set amount of time
         """ 
         """
-        print self._replyMessage.format(
+        print(self._replyMessage.format(
                 message,
                 permalink
             )
         """
-        print "---------------"
-        print author
-        print permalink
+        print("---------------")
+        print(author)
+        print(permalink)
 
         origin_date_text = ""
         # Before feature was implemented, there are no origin dates stored
@@ -150,8 +147,7 @@ class Reply(object):
                                 + _force_utf8(origin_date) + " UTC To Local Time)")
 
         try:
-            reddit.send_message(
-                recipient=str(author), 
+            reddit.redditor(str(author)).message(
                 subject='Hello, ' + _force_utf8(str(author)) + ' RemindMeBot Here!', 
                 message=self._replyMessage.format(
                     message=_force_utf8(message),
@@ -159,27 +155,27 @@ class Reply(object):
                     parent= self.parent_comment(permalink),
                     origin_date_text = origin_date_text
                 ))
-            print "Did It"
+            print("Did It")
             return True    
         except InvalidUser as err:
-            print "InvalidUser", err
+            print("InvalidUser", err)
             return True
         except APIException as err:
-            print "APIException", err
+            print("APIException", err)
             return False
         except IndexError as err:
-            print "IndexError", err
+            print("IndexError", err)
             return False
         except (HTTPError, ConnectionError, Timeout, timeout) as err:
-            print "HTTPError", err
+            print("HTTPError", err)
             time.sleep(10)
             return False
         except RateLimitExceeded as err:
-            print "RateLimitExceeded", err
+            print("RateLimitExceeded", err)
             time.sleep(10)
             return False
         except praw.errors.HTTPException as err:
-            print"praw.errors.HTTPException"
+            print("praw.errors.HTTPException")
             time.sleep(10)
             return False
 
@@ -224,6 +220,6 @@ def main():
 # =============================================================================
 # RUNNER
 # =============================================================================
-print "start"
+print("start")
 if __name__ == '__main__':
     main()
