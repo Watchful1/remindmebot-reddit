@@ -144,7 +144,7 @@ class Search(object):
         cal = pdt.Calendar()
         try:
             holdTime = cal.parse(self._storeTime, datetime.now(timezone('UTC')))
-        except ValueError, OverflowError:
+        except (ValueError, OverflowError):
             # year too long
             holdTime = cal.parse("9999-12-31")
         if holdTime[1] == 0:
