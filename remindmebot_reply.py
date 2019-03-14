@@ -18,7 +18,7 @@ from pytz import timezone
 # =============================================================================
 
 #Reddit info
-reddit = praw.Reddit("Watchful1BotTest", user_agent="RemindMeBot user agent")
+reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
 
 # =============================================================================
 # CLASSES
@@ -66,16 +66,19 @@ class Reply(object):
 		return the original submission
 		"""
 		try:
-			commentObj = reddit.submission(_force_utf8(dbPermalink)).comments[0]
+			if dbPermalink.startswith("www"):
+				dbPermalink = "https://"+dbPermalink
+			commentObj = reddit.comment(url=dbPermalink)
 			if commentObj.is_root:
-				return _force_utf8(commentObj.submission.permalink)
+				return commentObj.submission.permalink
 			else:
-				return _force_utf8(reddit.comment(commentObj.parent_id).permalink)
+				return commentObj.parent().permalink
 		except IndexError as err:
 			print("parrent_comment error")
 			return "It seems your original comment was deleted, unable to return parent comment."
 		# Catch any URLs that are not reddit comments
 		except Exception  as err:
+			print(err)
 			print("HTTPError/PRAW parent comment")
 			return "Parent comment not required for this URL."
 
@@ -132,15 +135,15 @@ class Reply(object):
 		# Before feature was implemented, there are no origin dates stored
 		if origin_date is not None:
 			origin_date_text =  ("\n\nYou requested this reminder on: " 
-								"[**" + _force_utf8(origin_date) + " UTC**](http://www.wolframalpha.com/input/?i="
-								+ _force_utf8(origin_date) + " UTC To Local Time)")
+								"[**" + str(origin_date) + " UTC**](http://www.wolframalpha.com/input/?i="
+								+ str(origin_date) + " UTC To Local Time)")
 
 		try:
 			reddit.redditor(str(author)).message(
-				subject='Hello, ' + _force_utf8(str(author)) + ' RemindMeBot Here!', 
+				subject='Hello, ' + str(author) + ' RemindMeBot Here!',
 				message=self._replyMessage.format(
-					message=_force_utf8(message),
-					original=_force_utf8(permalink),
+					message=str(message),
+					original=str(permalink),
 					parent= self.parent_comment(permalink),
 					origin_date_text = origin_date_text
 				))
@@ -156,10 +159,6 @@ class Reply(object):
 			print("HTTPError", err)
 			time.sleep(10)
 			return False
-
-
-def _force_utf8(text):
-	return str(text, 'utf8')
 
 
 # =============================================================================

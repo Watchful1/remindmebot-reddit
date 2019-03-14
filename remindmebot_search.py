@@ -22,7 +22,7 @@ from threading import Thread
 # =============================================================================
 
 #Reddit info
-reddit = praw.Reddit("Watchful1BotTest", user_agent="RemindMeBot user agent")
+reddit = praw.Reddit("RemindMeBot", user_agent="RemindMeBot user agent")
 
 # Time when program was started
 START_TIME = time.time()
@@ -47,11 +47,12 @@ class Search(object):
 	
 	# Fills subId with previous threads. Helpful for restarts
 	database = Connect()
-	cmd = "SELECT list FROM comment_list WHERE id = 1"
+	cmd = "SELECT id FROM comment_list"
 	database.cursor.execute(cmd)
 	data = database.cursor.fetchall()
 	if len(data):
-		subId = ast.literal_eval("[" + data[0][0] + "]")
+		for row in data:
+			subId.append(row[0])
 	database.connection.commit()
 	database.connection.close()
 
@@ -83,7 +84,7 @@ class Search(object):
 		self._privateMessage = privateMessage
 		self.parse_comment()
 		self.save_to_db()
-		self.build_message()
+		self.build_message(privateMessage)
 		self.reply()
 		if self._privateMessage == True:
 			# Makes sure to marks as read, even if the above doesn't work
@@ -101,8 +102,11 @@ class Search(object):
 			if permalinkTemp:
 				self._permalink = permalinkTemp.group()[1:-1]
 				# Makes sure the URL is real
-				request = requests.get(self._permalink)
-				if request.status_code != 200:
+				try:
+					request = requests.get(self._permalink)
+					if request.status_code != 200:
+						self._permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
+				except Exception as err:
 					self._permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
 			else:
 				# Defaults when the user doesn't provide a link
@@ -164,20 +168,22 @@ class Search(object):
 		# Info is added to DB, user won't be bothered a second time
 		self.commented.append(self.comment.id)
 
-	def build_message(self):
+	def build_message(self, privateMessage=False):
 		"""
 		Buildng message for user
 		"""
-		permalink = self.comment.permalink
+		if privateMessage:
+			permalink = "https://www.reddit.com/message/messages/" + self.comment.id
+		else:
+			permalink = self.comment.permalink
 		self._replyMessage +=(
 			"I will be messaging you on [**{0} UTC**](http://www.wolframalpha.com/input/?i={0} UTC To Local Time)"
 			" to remind you of [**this link.**]({commentPermalink})"
 			"{remindMeMessage}")
 
+		self._permalink = permalink
 		try:
-			self.sub = self.comment.permalink.submission
-			permalink = self.sub.permalink
-			self._permalink = permalink
+			self.sub = self.comment.submission
 		except Exception as err:
 			print("link had http")
 		if self._privateMessage == False and self.sub.id not in self.subId:
@@ -216,9 +222,8 @@ class Search(object):
 					self.subId.append(self.sub.id)
 					# adding it to database as well
 					database = Connect()
-					insertsubid = ", \'" + self.sub.id + "\'"
-					cmd = 'UPDATE comment_list set list = CONCAT(list, "{0}") where id = 1'.format(insertsubid)
-					database.cursor.execute(cmd)
+					cmd = 'insert into comment_list (id) values (?)'
+					database.cursor.execute(cmd, (self.sub.id,))
 					database.connection.commit()
 					database.connection.close()
 					# grabbing comment just made
@@ -359,19 +364,21 @@ def read_pm():
 				redditPM.run(privateMessage=True)
 				message.mark_read()
 			elif (("delete!" in message.body.lower() or "!delete" in message.body.lower()) and prawobject):  
-				givenid = re.findall(r'delete!\s(.*?)$', message.body.lower())[0]
-				comment = reddit.comment(givenid)
-				try:
-					parentcomment = comment.parent()
-					if message.author.name == parentcomment.author.name:
-						comment.delete()
-				except ValueError as err:
-					# comment wasn't inside the list
-					pass
-				except AttributeError as err:
-					# comment might be deleted already
-					pass
-				message.mark_as_read()
+				ids = re.findall(r'delete!\s(.*?)$', message.body.lower())
+				if len(ids):
+					givenid = ids[0]
+					comment = reddit.comment(givenid)
+					try:
+						parentcomment = comment.parent()
+						if message.author.name == parentcomment.author.name:
+							comment.delete()
+					except ValueError as err:
+						# comment wasn't inside the list
+						pass
+					except AttributeError as err:
+						# comment might be deleted already
+						pass
+				message.mark_read()
 			elif (("myreminders!" in message.body.lower() or "!myreminders" in message.body.lower()) and prawobject):
 				listOfReminders = grab_list_of_reminders(message.author.name)
 				message.reply(listOfReminders)
@@ -385,13 +392,13 @@ def read_pm():
 					message.reply("Reminder deleted. Your current Reminders:\n\n" + listOfReminders)
 				else:
 					message.reply("Try again with the current IDs that belong to you below. Your current Reminders:\n\n" + listOfReminders)
-				message.mark_as_read()
+				message.mark_read()
 			elif (("removeall!" in message.body.lower() or "!removeall" in message.body.lower()) and prawobject):
 				count = str(remove_all(message.author.name))
 				listOfReminders = grab_list_of_reminders(message.author.name)
 				message.reply("I have deleted all **" + count + "** reminders for you.\n\n" + listOfReminders)
-				message.mark_as_read()
-			message.mark_as_read()
+				message.mark_read()
+			message.mark_read()
 	except Exception as err:
 		print(traceback.format_exc())
 
@@ -434,11 +441,11 @@ def main():
 			if checkcycle % 5 == 0:
 				read_pm()
 
-			# for rawcomment in comments:
-			#	 # object constructor requires empty attribute
-			#	 rawcomment['_replies'] = ''
-			#	 comment = reddit.comment(rawcomment)
-			#	 check_comment(comment)
+			for rawcomment in comments:
+				# object constructor requires empty attribute
+				rawcomment['_replies'] = ''
+				comment = reddit.comment(rawcomment['id'])
+				check_comment(comment)
 
 			# Only check periodically 
 			if checkcycle >= 1000:
