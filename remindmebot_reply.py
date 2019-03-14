@@ -87,7 +87,7 @@ class Reply(object):
 		# get current time to compare
 		currentTime = datetime.now(timezone('UTC'))
 		currentTime = format(currentTime, '%Y-%m-%d %H:%M:%S')
-		cmd = "SELECT * FROM message_date WHERE new_date < ?"
+		cmd = "SELECT * FROM message_date WHERE new_date < ? order by new_date DESC"
 		self._queryDB.cursor.execute(cmd, (currentTime,))
 
 	def search_db(self):

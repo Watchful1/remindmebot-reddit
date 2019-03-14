@@ -71,6 +71,7 @@ class Search(object):
 	def __init__(self, comment):
 		self._addToDB = Connect()
 		self.comment = comment # Reddit comment Object
+		self._permalink = None
 		self._messageInput = '"Hello, I\'m here to remind you to see the parent comment!"'
 		self._storeTime = None
 		self._replyMessage = ""
@@ -98,19 +99,26 @@ class Search(object):
 		if self._privateMessage == True:
 			permalinkTemp = re.search('\[(.*?)\]', self.comment.body)
 			if permalinkTemp:
-				self.comment.permalink = permalinkTemp.group()[1:-1]
+				self._permalink = permalinkTemp.group()[1:-1]
 				# Makes sure the URL is real
-				request = requests.get(self.comment.permalink)
+				request = requests.get(self._permalink)
 				if request.status_code != 200:
-					self.comment.permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
+					self._permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
 			else:
 				# Defaults when the user doesn't provide a link
-				self.comment.permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
+				self._permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
+		else:
+			print("----")
+			print(self.comment.permalink)
+			self._permalink = "www.reddit.com" + self.comment.permalink
 
 		# remove RemindMe! or !RemindMe (case insenstive)
-		match = re.search(r'(?i)(!*)RemindMe(!*)', self.comment.body)
+		match = re.search(r'(?i)(!*)RemindMe(!*)[^bot]', self.comment.body)
 		# and everything before
-		tempString = self.comment.body[match.start():]
+		try:
+			tempString = self.comment.body[match.start():]
+		except Exception as err:
+			tempString = "' '"
 
 		# remove all format breaking characters IE: [ ] ( ) newline
 		tempString = tempString.split("\n")[0]
@@ -147,7 +155,7 @@ class Search(object):
 		self._replyDate = time.strftime('%Y-%m-%d %H:%M:%S', holdTime[0])
 		cmd = "INSERT INTO message_date (permalink, message, new_date, origin_date, userID) VALUES (?, ?, ?, ?, ?)"
 		self._addToDB.cursor.execute(cmd, (
-						self.comment.permalink.encode('utf-8'),
+						self._permalink.encode('utf-8'),
 						self._messageInput.encode('utf-8'),
 						self._replyDate,
 						self._originDate.strftime('%Y-%m-%d %H:%M:%S'),
@@ -167,7 +175,9 @@ class Search(object):
 			"{remindMeMessage}")
 
 		try:
-			self.sub = reddit.submission(self.comment.permalink)
+			self.sub = self.comment.permalink.submission
+			permalink = self.sub.permalink
+			self._permalink = permalink
 		except Exception as err:
 			print("link had http")
 		if self._privateMessage == False and self.sub.id not in self.subId:
@@ -234,7 +244,7 @@ class Search(object):
 		"""
 		try:
 			# Grabbing all child comments
-			replies = reddit.submission(url=self.comment.permalink).comments[0].replies
+			replies = reddit.submission(url=self._permalink).comments[0].replies
 			# Look for bot's reply
 			commentfound = ""
 			if replies:
@@ -250,7 +260,7 @@ class Search(object):
 		Posts edits the count if found
 		"""
 		query = "SELECT count(DISTINCT userid) FROM message_date WHERE permalink = ?"
-		self._addToDB.cursor.execute(query, (self.comment.permalink,))
+		self._addToDB.cursor.execute(query, (self._permalink,))
 		data = self._addToDB.cursor.fetchall()
 		# Grabs the tuple within the tuple, a number/the dbcount
 		dbcount = count = str(data[0][0])
@@ -381,6 +391,7 @@ def read_pm():
 				listOfReminders = grab_list_of_reminders(message.author.name)
 				message.reply("I have deleted all **" + count + "** reminders for you.\n\n" + listOfReminders)
 				message.mark_as_read()
+			message.mark_as_read()
 	except Exception as err:
 		print(traceback.format_exc())
 
@@ -419,7 +430,10 @@ def main():
 				headers = {'User-Agent': 'RemindMeBot-Agent'})
 			json = request.json()
 			comments =  json["data"]
-			read_pm()
+
+			if checkcycle % 5 == 0:
+				read_pm()
+
 			# for rawcomment in comments:
 			#	 # object constructor requires empty attribute
 			#	 rawcomment['_replies'] = ''
@@ -427,17 +441,17 @@ def main():
 			#	 check_comment(comment)
 
 			# Only check periodically 
-			if checkcycle >= 5:
+			if checkcycle >= 1000:
 				check_own_comments()
 				checkcycle = 0
 			else:
 				checkcycle += 1
 
 			print("----")
-			time.sleep(30)
+			time.sleep(5)
 		except Exception as err:
 			print(traceback.format_exc())
-			time.sleep(30)
+			time.sleep(10)
 		"""
 		Will add later if problem with api.pushshift
 		hence why check_comment is a function
