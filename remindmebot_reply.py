@@ -151,7 +151,7 @@ class Reply(object):
 			return True
 		except APIException as err:
 			print("APIException", err)
-			if "USER_DOESNT_EXIST" in err:
+			if "USER_DOESNT_EXIST" in str(err):
 				print("User doesn't exist, skipping")
 				return True
 			else:
