@@ -106,7 +106,11 @@ class Reply(object):
 			if row[0] not in alreadyCommented:
 				flagDelete = False
 				# MySQl- permalink, message, origin date, reddit user
-				flagDelete = self.new_reply(row[1],row[2], row[4], row[5])
+				if isinstance(row[1], (bytes, bytearray)):
+					permalink = row[1].decode("utf-8")
+				else:
+					permalink = row[1]
+				flagDelete = self.new_reply(permalink,row[2], row[4], row[5])
 				# removes row based on flagDelete
 				if flagDelete:
 					cmd = "DELETE FROM message_date WHERE id = ?"
