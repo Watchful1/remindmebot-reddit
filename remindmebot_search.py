@@ -303,11 +303,26 @@ def grab_list_of_reminders(username):
 			"|Permalink|Message|Date|Remove|\n"
 			"|-|-|-|:-:|")
 	for row in data:
-		date = str(row[2])
+		if isinstance(row[0], (bytes, bytearray)):
+			permalink = row[0].decode("utf-8")
+		else:
+			permalink = row[0]
+		if isinstance(row[1], (bytes, bytearray)):
+			message = row[1].decode("utf-8")
+		else:
+			message = str(row[1])
+		if isinstance(row[2], (bytes, bytearray)):
+			date = row[2].decode("utf-8")
+		else:
+			date = str(row[2])
+		if isinstance(row[3], (bytes, bytearray)):
+			id = row[3].decode("utf-8")
+		else:
+			id = str(row[3])
 		table += (
-			"\n|" + row[0] + "|" + str(row[1]) + "|" +
-			"[" + date  + " UTC](http://www.wolframalpha.com/input/?i=" + str(row[2]) + " UTC to local time)|"
-			"[[X]](https://np.reddit.com/message/compose/?to=RemindMeBot&subject=Remove&message=Remove!%20"+ str(row[3]) + ")|"
+			"\n|" + permalink + "|" + message + "|" +
+			"[" + date + " UTC](http://www.wolframalpha.com/input/?i=" + str(row[2]) + " UTC to local time)|"
+			"[[X]](https://np.reddit.com/message/compose/?to=RemindMeBot&subject=Remove&message=Remove!%20"+ id + ")|"
 			)
 	if len(data) == 0: 
 		table = "Looks like you have no reminders. Click the **[Custom]** button below to make one!"

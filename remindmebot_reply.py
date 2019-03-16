@@ -110,7 +110,11 @@ class Reply(object):
 					permalink = row[1].decode("utf-8")
 				else:
 					permalink = row[1]
-				flagDelete = self.new_reply(permalink,row[2], row[4], row[5])
+				if isinstance(row[2], (bytes, bytearray)):
+					message = row[2].decode("utf-8")
+				else:
+					message = row[2]
+				flagDelete = self.new_reply(permalink, message, row[4], row[5])
 				# removes row based on flagDelete
 				if flagDelete:
 					cmd = "DELETE FROM message_date WHERE id = ?"
