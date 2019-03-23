@@ -433,7 +433,7 @@ def check_comment(comment):
 
 def check_own_comments():
 	user = reddit.redditor("RemindMeBot")
-	for comment in user.get_comments(limit=None):
+	for comment in user.comments.new(limit=None):
 		if comment.score <= -5:
 			print("COMMENT DELETED")
 			print(comment)
