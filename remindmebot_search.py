@@ -97,24 +97,14 @@ class Search(object):
 		Parse comment looking for the message and time
 		"""
 
-		if self._privateMessage == True:
-			permalinkTemp = re.search('\[(.*?)\]', self.comment.body)
-			if permalinkTemp:
-				self._permalink = permalinkTemp.group()[1:-1]
-				# Makes sure the URL is real
-				try:
-					request = requests.get(self._permalink)
-					if request.status_code != 200:
-						self._permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
-				except Exception as err:
-					self._permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
-			else:
-				# Defaults when the user doesn't provide a link
-				self._permalink = "http://np.reddit.com/r/RemindMeBot/comments/24duzp/remindmebot_info/"
+		if self._privateMessage:
+			print("----")
+			self._permalink = "https://www.reddit.com/message/messages/" + self.comment.id
+			print(self._permalink)
 		else:
 			print("----")
-			print(self.comment.permalink)
 			self._permalink = "www.reddit.com" + self.comment.permalink
+			print(self._permalink)
 
 		# remove RemindMe! or !RemindMe (case insenstive)
 		match = re.search(r'(?i)(!*)RemindMe(!*)[^bot]', self.comment.body)
@@ -172,16 +162,11 @@ class Search(object):
 		"""
 		Buildng message for user
 		"""
-		if privateMessage:
-			permalink = "https://www.reddit.com/message/messages/" + self.comment.id
-		else:
-			permalink = self.comment.permalink
 		self._replyMessage +=(
 			"I will be messaging you on [**{0} UTC**](http://www.wolframalpha.com/input/?i={0} UTC To Local Time)"
 			" to remind you of [**this link.**]({commentPermalink})"
 			"{remindMeMessage}")
 
-		self._permalink = permalink
 		try:
 			self.sub = self.comment.submission
 		except Exception as err:
@@ -192,7 +177,7 @@ class Search(object):
 				"[{permalink}]%0A%0ARemindMe! {time}) to send a PM to also be reminded and to reduce spam."
 				"\n\n^(Parent commenter can ) [^(delete this message to hide from others.)]"
 				"(http://np.reddit.com/message/compose/?to=RemindMeBot&subject=Delete Comment&message=Delete! ____id____)").format(
-					permalink=permalink,
+					permalink=self._permalink,
 					time=self._storeTime.replace('\n', '')
 				)
 		else:
@@ -201,7 +186,7 @@ class Search(object):
 		self._replyMessage = self._replyMessage.format(
 				self._replyDate,
 				remindMeMessage=remindMeMessage,
-				commentPermalink=permalink)
+				commentPermalink=self._permalink)
 		self._replyMessage += Search.endMessage
 
 	def reply(self):
