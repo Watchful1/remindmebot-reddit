@@ -103,7 +103,7 @@ class Search(object):
 			print(self._permalink)
 		else:
 			print("----")
-			self._permalink = "www.reddit.com" + self.comment.permalink
+			self._permalink = "https://www.reddit.com" + self.comment.permalink
 			print(self._permalink)
 
 		# remove RemindMe! or !RemindMe (case insenstive)
