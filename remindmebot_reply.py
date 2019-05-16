@@ -10,6 +10,7 @@ import time
 from datetime import datetime
 from requests.exceptions import HTTPError, ConnectionError, Timeout
 from praw.exceptions import APIException
+from prawcore.exceptions import ServerError
 from socket import timeout
 from pytz import timezone
 
@@ -167,7 +168,7 @@ class Reply(object):
 		except IndexError as err:
 			print("IndexError", err)
 			return False
-		except (HTTPError, ConnectionError, Timeout, timeout) as err:
+		except (HTTPError, ConnectionError, Timeout, timeout, ServerError) as err:
 			print("HTTPError", err)
 			time.sleep(10)
 			return False
